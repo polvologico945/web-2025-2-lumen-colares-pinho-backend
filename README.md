@@ -1,8 +1,8 @@
 # Lumen — Backend (API)
 
 ## Integrantes da Dupla
-- Nome 1 — Matrícula — E-mail
-- Nome 2 — Matrícula — E-mail
+- Carla Evelyn Colares Inacio — 556574 — carlaevelyn@alu.ufc.br
+- Maria José Pinho Barros — 556324 — maria.barros@alu.ufc.br
 
 ## Descrição
 Este repositório contém a API do projeto Lumen, responsável pela autenticação,
