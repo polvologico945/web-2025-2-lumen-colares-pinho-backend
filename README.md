@@ -15,8 +15,6 @@ O backend fornece endpoints REST que são consumidos pelo frontend em React.
 - Express.js
 - CORS e JSON Middleware
 - PostgreSQL (via Supabase ou Railway)
-- (Opcional) JWT para autenticação
-- (Opcional) Prisma ou Sequelize como ORM
 
 ## Como Executar o Backend
 1. Clone o repositório:
