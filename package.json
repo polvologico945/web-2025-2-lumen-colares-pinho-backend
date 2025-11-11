@@ -1,0 +1,25 @@
+{
+  "name": "web-2025-2-lumen-colares-pinho-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "- Carla Evelyn Colares Inacio — 556574 — carlaevelyn@alu.ufc.br - Maria José Pinho Barros — 556324 — maria.barros@alu.ufc.br",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/polvologico945/web-2025-2-lumen-colares-pinho-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/polvologico945/web-2025-2-lumen-colares-pinho-backend/issues"
+  },
+  "homepage": "https://github.com/polvologico945/web-2025-2-lumen-colares-pinho-backend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
