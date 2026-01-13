@@ -11,10 +11,7 @@ gestão de perfis, postagens e sistema de convites entre usuários.
 O backend fornece endpoints REST que são consumidos pelo frontend em React.
 
 ## Tecnologias Utilizadas
-- Node.js
-- Express.js
-- CORS e JSON Middleware
-- PostgreSQL (via Supabase ou Railway)
+
 
 ## Como Executar o Backend
 1. Clone o repositório:
