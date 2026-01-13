@@ -3,7 +3,7 @@ from .base import Base
 
 
 class Interest(Base):
-    __tablename__ = "interesses"
+    __tablename__ = "interests"
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, nullable=False)

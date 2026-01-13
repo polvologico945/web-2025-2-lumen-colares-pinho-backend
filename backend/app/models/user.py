@@ -21,5 +21,5 @@ class User(Base):
 
 
     
-    posts = relationship("Postagem", back_populates="autor")
+    posts = relationship("Post", back_populates="autor")
     interests = relationship("UserInterest", back_populates="user")
