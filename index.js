@@ -1,3 +1,4 @@
+import 'dotenv/config'; 
 import express from "express";
 import cors from "cors";
 import { v4 as uuidv4 } from 'uuid';
@@ -14,6 +15,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
+    'http://localhost:8000',
     'http://127.0.0.1:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -54,7 +56,6 @@ let usuarios = [];
 let posts = [];
 let noticias = [];
 let comentarios = [];
-let solicitacoes = [];
 
 usuarios = [
   {
@@ -165,7 +166,7 @@ const autenticar = (req, res, next) => {
 app.get("/api/health", (req, res) => {
   res.json({ 
     sucesso: true,
-    mensagem: "Backend Lumen Colares Online",
+    mensagem: "Backend Lumen Online",
     timestamp: new Date().toISOString()
   });
 });
@@ -238,26 +239,6 @@ app.get("/api/noticias/onibus/horarios", (req, res) => {
   });
 });
 
-app.post("/api/solicitacoes", autenticar, (req, res) => {
-  const { titulo, descricao } = req.body;
-  
-  const novaSolicitacao = {
-    id: uuidv4(),
-    titulo,
-    descricao,
-    usuarioId: req.usuarioId,
-    status: 'pendente',
-    dataCriacao: new Date().toISOString()
-  };
-  
-  solicitacoes.push(novaSolicitacao);
-  res.status(201).json({
-    sucesso: true,
-    mensagem: "Solicitação criada",
-    dados: novaSolicitacao
-  });
-});
-
 app.post("/api/posts/:id/comentarios", autenticar, (req, res) => {
   const { conteudo } = req.body;
   
@@ -277,7 +258,7 @@ app.post("/api/posts/:id/comentarios", autenticar, (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8000;
 import fs from 'fs';
 if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
 

@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine # type: ignore
+from sqlalchemy.orm import sessionmaker # pyright: ignore[reportMissingImports]
 from .base import DATABASE_URL  # aponta para sqlite:///.../lumen.db
 
 engine = create_engine(
