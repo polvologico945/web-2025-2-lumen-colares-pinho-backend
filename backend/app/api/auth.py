@@ -16,7 +16,7 @@ def login_endpoint(credentials: UserLogin, db: Session = Depends(get_db)):
     user: User | None = (
         db.query(User).filter(User.email == credentials.email).first()
     )
-    if not user or not verify_password(credentials.password, user.senha_hash):
+    if not user or not verify_password(credentials.password, user.senha_hash): # type: ignore
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciais inválidas",

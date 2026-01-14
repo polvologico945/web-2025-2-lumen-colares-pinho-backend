@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
+from fastapi.staticfiles import StaticFiles
 
 from app.api import user as user_api
 from app.api import post as post_api
@@ -15,7 +17,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5174", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,3 +32,10 @@ app.include_router(user_interest_api.router, prefix="/user-interests", tags=["us
 app.include_router(apoio_api.router, prefix="/supports", tags=["apoios"])
 app.include_router(bus_info_api.router, prefix="/bus-info", tags=["bus-info"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+
+# Serve built frontend (if available) at root
+_frontend_dist = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "web-2025-2-lumen-colares-pinho-frontend", "dist")
+)
+if os.path.isdir(_frontend_dist):
+    app.mount("/", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
