@@ -27,7 +27,9 @@ DATABASE_URL=sua_string_de_conexao_postgres
 node index.js
 
 5. A API estará disponível em:
-http://localhost:3001
+http://localhost:8000
 
-## Status
-Em desenvolvimento (MVP iniciando)
+API Node.js com Express para rede social universitária. 
+Inclui autenticação JWT, upload de imagens (5 por post, 5MB cada) e sistema de pedidos de ajuda com -> 
+fluxo transacional (pendente→aceito→concluído).
+Rodar: 'npm start' 'npm run dev'. Usuários teste: carlaevelyn@alu.ufc.br/senha123 e maria.barros@alu.ufc.br/since2023.
