@@ -511,6 +511,328 @@ app.post("/api/posts/:postId/curtir", autenticar, (req, res) => {
   });
 });
 
+// ========== SISTEMA DE PEDIDOS DE AJUDA (FLUXO TRANSAIONAL) ==========
+
+let pedidosAjuda = [];
+
+// Criar pedido de ajuda
+app.post("/api/pedidos", autenticar, (req, res) => {
+  const { titulo, descricao, materia } = req.body;
+  
+  if (!titulo || !descricao || !materia) {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: "Título, descrição e matéria são obrigatórios"
+    });
+  }
+  
+  const usuarioAtual = usuarios.find(u => u.id === req.usuarioId) || usuarios[0];
+  
+  const novoPedido = {
+    id: uuidv4(),
+    titulo: titulo.trim(),
+    descricao: descricao.trim(),
+    materia: materia.trim(),
+    autor: {
+      id: usuarioAtual.id,
+      nome: usuarioAtual.nome,
+      avatar: usuarioAtual.avatar,
+      curso: "Engenharia de Software"
+    },
+    status: "pendente", // pendente → aceito → concluído
+    dataCriacao: new Date().toISOString(),
+    aceitoPor: null,
+    dataAceito: null,
+    dataConclusao: null,
+    comentarios: []
+  };
+  
+  pedidosAjuda.unshift(novoPedido);
+  
+  res.status(201).json({
+    sucesso: true,
+    mensagem: "Pedido de ajuda criado com sucesso!",
+    dados: novoPedido
+  });
+});
+
+// Obter todos os pedidos
+app.get("/api/pedidos", (req, res) => {
+  const status = req.query.status; // Filtro opcional
+  
+  let pedidosFiltrados = pedidosAjuda;
+  
+  if (status) {
+    pedidosFiltrados = pedidosAjuda.filter(p => p.status === status);
+  }
+  
+  // Ordenar por data (mais recentes primeiro)
+  pedidosFiltrados.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
+  
+  res.json({
+    sucesso: true,
+    quantidade: pedidosFiltrados.length,
+    dados: pedidosFiltrados
+  });
+});
+
+// Obter pedidos de um usuário
+app.get("/api/pedidos/meus", autenticar, (req, res) => {
+  const usuarioAtual = usuarios.find(u => u.id === req.usuarioId) || usuarios[0];
+  
+  const meusPedidos = pedidosAjuda.filter(p => 
+    p.autor.id === usuarioAtual.id || p.aceitoPor?.id === usuarioAtual.id
+  );
+  
+  res.json({
+    sucesso: true,
+    quantidade: meusPedidos.length,
+    dados: meusPedidos
+  });
+});
+
+// Aceitar um pedido (mudar status: pendente → aceito)
+app.put("/api/pedidos/:pedidoId/aceitar", autenticar, (req, res) => {
+  const { pedidoId } = req.params;
+  const usuarioAtual = usuarios.find(u => u.id === req.usuarioId) || usuarios[0];
+  
+  const pedidoIndex = pedidosAjuda.findIndex(p => p.id === pedidoId);
+  
+  if (pedidoIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      mensagem: "Pedido não encontrado"
+    });
+  }
+  
+  const pedido = pedidosAjuda[pedidoIndex];
+  
+  if (pedido.status !== "pendente") {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: `Este pedido já está ${pedido.status}`
+    });
+  }
+  
+  if (pedido.autor.id === usuarioAtual.id) {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: "Você não pode aceitar seu próprio pedido"
+    });
+  }
+  
+  // Atualizar pedido
+  pedidosAjuda[pedidoIndex] = {
+    ...pedido,
+    status: "aceito",
+    aceitoPor: {
+      id: usuarioAtual.id,
+      nome: usuarioAtual.nome,
+      avatar: usuarioAtual.avatar
+    },
+    dataAceito: new Date().toISOString()
+  };
+  
+  res.json({
+    sucesso: true,
+    mensagem: "Pedido aceito com sucesso!",
+    dados: pedidosAjuda[pedidoIndex]
+  });
+});
+
+// Concluir um pedido (mudar status: aceito → concluído)
+app.put("/api/pedidos/:pedidoId/concluir", autenticar, (req, res) => {
+  const { pedidoId } = req.params;
+  const usuarioAtual = usuarios.find(u => u.id === req.usuarioId) || usuarios[0];
+  
+  const pedidoIndex = pedidosAjuda.findIndex(p => p.id === pedidoId);
+  
+  if (pedidoIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      mensagem: "Pedido não encontrado"
+    });
+  }
+  
+  const pedido = pedidosAjuda[pedidoIndex];
+  
+  // Apenas o autor ou quem aceitou pode concluir
+  const podeConcluir = pedido.autor.id === usuarioAtual.id || 
+                      pedido.aceitoPor?.id === usuarioAtual.id;
+  
+  if (!podeConcluir) {
+    return res.status(403).json({
+      sucesso: false,
+      mensagem: "Você não tem permissão para concluir este pedido"
+    });
+  }
+  
+  if (pedido.status !== "aceito") {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: `Só é possível concluir pedidos aceitos. Status atual: ${pedido.status}`
+    });
+  }
+  
+  // Atualizar pedido
+  pedidosAjuda[pedidoIndex] = {
+    ...pedido,
+    status: "concluído",
+    dataConclusao: new Date().toISOString()
+  };
+  
+  res.json({
+    sucesso: true,
+    mensagem: "Pedido concluído com sucesso!",
+    dados: pedidosAjuda[pedidoIndex]
+  });
+});
+
+// Adicionar comentário a um pedido
+app.post("/api/pedidos/:pedidoId/comentarios", autenticar, (req, res) => {
+  const { pedidoId } = req.params;
+  const { conteudo } = req.body;
+  
+  if (!conteudo || conteudo.trim() === '') {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: "O comentário não pode estar vazio"
+    });
+  }
+  
+  const pedidoIndex = pedidosAjuda.findIndex(p => p.id === pedidoId);
+  
+  if (pedidoIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      mensagem: "Pedido não encontrado"
+    });
+  }
+  
+  const usuarioAtual = usuarios.find(u => u.id === req.usuarioId) || usuarios[0];
+  
+  const novoComentario = {
+    id: uuidv4(),
+    conteudo: conteudo.trim(),
+    autor: {
+      id: usuarioAtual.id,
+      nome: usuarioAtual.nome,
+      avatar: usuarioAtual.avatar
+    },
+    data: new Date().toISOString()
+  };
+  
+  if (!pedidosAjuda[pedidoIndex].comentarios) {
+    pedidosAjuda[pedidoIndex].comentarios = [];
+  }
+  
+  pedidosAjuda[pedidoIndex].comentarios.unshift(novoComentario);
+  
+  res.status(201).json({
+    sucesso: true,
+    mensagem: "Comentário adicionado",
+    dados: novoComentario
+  });
+});
+
+// Inicializar alguns pedidos de exemplo
+pedidosAjuda = [
+  {
+    id: uuidv4(),
+    titulo: "Preciso de ajuda com cálculo 1",
+    descricao: "Estou com dificuldades na matéria de limites e derivadas. Alguém pode me ajudar?",
+    materia: "Cálculo 1",
+    autor: {
+      id: usuarios[1].id,
+      nome: usuarios[1].nome,
+      avatar: usuarios[1].avatar,
+      curso: "Engenharia de Software"
+    },
+    status: "pendente",
+    dataCriacao: new Date(Date.now() - 86400000).toISOString(), // 1 dia atrás
+    aceitoPor: null,
+    dataAceito: null,
+    dataConclusao: null,
+    comentarios: [
+      {
+        id: uuidv4(),
+        conteudo: "Posso te ajudar! Tenho experiência com cálculo.",
+        autor: {
+          id: usuarios[0].id,
+          nome: usuarios[0].nome,
+          avatar: usuarios[0].avatar
+        },
+        data: new Date(Date.now() - 43200000).toISOString() // 12h atrás
+      }
+    ]
+  },
+  {
+    id: uuidv4(),
+    titulo: "Projeto de Banco de Dados",
+    descricao: "Preciso de um grupo para o projeto de BD. 2 pessoas já confirmaram.",
+    materia: "Banco de Dados",
+    autor: {
+      id: usuarios[0].id,
+      nome: usuarios[0].nome,
+      avatar: usuarios[0].avatar,
+      curso: "Engenharia de Software"
+    },
+    status: "aceito",
+    dataCriacao: new Date(Date.now() - 172800000).toISOString(), // 2 dias atrás
+    aceitoPor: {
+      id: usuarios[1].id,
+      nome: usuarios[1].nome,
+      avatar: usuarios[1].avatar
+    },
+    dataAceito: new Date(Date.now() - 86400000).toISOString(), // 1 dia atrás
+    dataConclusao: null,
+    comentarios: []
+  },
+  {
+    id: uuidv4(),
+    titulo: "Dúvida em React useState",
+    descricao: "Não estou entendendo como usar múltiplos states no mesmo componente.",
+    materia: "Programação Web",
+    autor: {
+      id: usuarios[1].id,
+      nome: usuarios[1].nome,
+      avatar: usuarios[1].avatar,
+      curso: "Engenharia de Software"
+    },
+    status: "concluído",
+    dataCriacao: new Date(Date.now() - 259200000).toISOString(), // 3 dias atrás
+    aceitoPor: {
+      id: usuarios[0].id,
+      nome: usuarios[0].nome,
+      avatar: usuarios[0].avatar
+    },
+    dataAceito: new Date(Date.now() - 172800000).toISOString(), // 2 dias atrás
+    dataConclusao: new Date(Date.now() - 86400000).toISOString(), // 1 dia atrás
+    comentarios: [
+      {
+        id: uuidv4(),
+        conteudo: "Vou te mostrar alguns exemplos!",
+        autor: {
+          id: usuarios[0].id,
+          nome: usuarios[0].nome,
+          avatar: usuarios[0].avatar
+        },
+        data: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        id: uuidv4(),
+        conteudo: "Muito obrigada! Ajudou bastante!",
+        autor: {
+          id: usuarios[1].id,
+          nome: usuarios[1].nome,
+          avatar: usuarios[1].avatar
+        },
+        data: new Date(Date.now() - 86400000).toISOString()
+      }
+    ]
+  }
+];
+
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
