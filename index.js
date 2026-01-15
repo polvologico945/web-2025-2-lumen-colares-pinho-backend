@@ -15,14 +15,19 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'http://localhost:5174', 
     'http://localhost:3000',
     'http://localhost:8000',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174'  
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+app.options('*', cors());
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -126,29 +131,7 @@ const autenticar = (req, res, next) => {
   next();
 };
 
-// Middleware de validação de post
-const validarPost = (req, res, next) => {
-  const { title, body } = req.body;
-  const hasFiles = req.files && req.files.length > 0;
-  
-  // Se não tem arquivos, precisa ter conteúdo
-  if (!hasFiles && (!title || !body || title.trim() === '' || body.trim() === '')) {
-    return res.status(400).json({
-      sucesso: false,
-      mensagem: "Post deve conter texto ou pelo menos uma imagem"
-    });
-  }
-  
-  // Se tem conteúdo, validar mínimo
-  if (body && body.trim().length < 1) {
-    return res.status(400).json({
-      sucesso: false,
-      mensagem: "O conteúdo do post deve ter pelo menos 1 caractere"
-    });
-  }
-  
-  next();
-};
+
 
 // ROTAS
 app.get("/api/health", (req, res) => {
@@ -443,6 +426,88 @@ app.delete("/api/posts/:postId/imagens", autenticar, (req, res) => {
     sucesso: true,
     mensagem: "Imagem removida com sucesso",
     dados: post
+  });
+});
+
+// Obter comentários de um post
+app.get("/api/posts/:postId/comentarios", (req, res) => {
+  const { postId } = req.params;
+  
+  const comentariosDoPost = comentarios.filter(c => c.postId === postId);
+  
+  res.json({
+    sucesso: true,
+    quantidade: comentariosDoPost.length,
+    dados: comentariosDoPost
+  });
+});
+
+// Adicionar comentário a um post
+app.post("/api/posts/:postId/comentarios", autenticar, (req, res) => {
+  const { postId } = req.params;
+  const { conteudo } = req.body;
+  
+  if (!conteudo || conteudo.trim() === '') {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: "O comentário não pode estar vazio"
+    });
+  }
+  
+  // Encontrar o post
+  const post = posts.find(p => p.id === postId);
+  if (!post) {
+    return res.status(404).json({
+      sucesso: false,
+      mensagem: "Post não encontrado"
+    });
+  }
+  
+  // Criar novo comentário
+  const novoComentario = {
+    id: uuidv4(),
+    postId: postId,
+    conteudo: conteudo.trim(),
+    autor: {
+      id: usuarios[0].id,
+      nome: usuarios[0].nome,
+      avatar: usuarios[0].avatar,
+      username: usuarios[0].username
+    },
+    data: new Date().toISOString(),
+    curtidas: 0
+  };
+  
+  comentarios.push(novoComentario);
+  
+  // Atualizar contador de comentários no post
+  post.comments = (post.comments || 0) + 1;
+  
+  res.status(201).json({
+    sucesso: true,
+    mensagem: "Comentário adicionado com sucesso",
+    dados: novoComentario
+  });
+});
+
+// Curtir post
+app.post("/api/posts/:postId/curtir", autenticar, (req, res) => {
+  const { postId } = req.params;
+  
+  const postIndex = posts.findIndex(p => p.id === postId);
+  if (postIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      mensagem: "Post não encontrado"
+    });
+  }
+  
+  posts[postIndex].curtidas = (posts[postIndex].curtidas || 0) + 1;
+  
+  res.json({
+    sucesso: true,
+    mensagem: "Post curtido",
+    curtidas: posts[postIndex].curtidas
   });
 });
 
