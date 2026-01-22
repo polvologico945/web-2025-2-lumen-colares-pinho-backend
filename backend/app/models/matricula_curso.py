@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from .base import Base
+from app.db.base import Base
 
 
 class MatriculaCurso(Base):

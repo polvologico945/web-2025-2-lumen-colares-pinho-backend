@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from .base import Base
+from app.db.base import Base
 
 
 class Noticia(Base):
