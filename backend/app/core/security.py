@@ -2,31 +2,34 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from jose import jwt, JWTError
-from passlib.context import CryptContext
-import hashlib
+import bcrypt
 import re
 
 SECRET_KEY = "troque-por-uma-string-bem-grande-e-secreta"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # Hash a password for the first time
+    # (Using bcrypt, the salt is saved into the hash itself)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # try passlib/bcrypt first
     try:
-        if pwd_context.identify(hashed_password):
-            return pwd_context.verify(plain_password, hashed_password)
+        pwd_bytes = plain_password.encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(pwd_bytes, hashed_bytes)
+    except ValueError:
+        # Invalid hash format
+        pass
     except Exception:
-        # fall through to sha256 check
         pass
 
-    # fallback: if stored hash looks like a hex SHA-256, compare directly
+    # fallback: if stored hash looks like a hex SHA-256 (old system), compare directly
     if isinstance(hashed_password, str) and re.fullmatch(r"[0-9a-f]{64}", hashed_password):
         return hashlib.sha256(plain_password.encode("utf-8")).hexdigest() == hashed_password
 

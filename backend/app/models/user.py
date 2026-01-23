@@ -23,3 +23,7 @@ class User(Base):
     
     posts = relationship("Post", back_populates="user")
     interests = relationship("UserInterest", back_populates="user")
+    comments = relationship("Comment", back_populates="user")
+    likes = relationship("Like", back_populates="user")
+    pedidos = relationship("PedidoAjuda", foreign_keys="[PedidoAjuda.user_id]", back_populates="autor")
+    pedidos_aceitos = relationship("PedidoAjuda", foreign_keys="[PedidoAjuda.accepted_by_id]", back_populates="aceito_por")
