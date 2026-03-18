@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/evelyn/Downloads/lumen/backend/venv
+set -gx VIRTUAL_ENV /home/evelyn/web-2025-2-lumen-colares-pinho-backend/backend/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
